@@ -30,40 +30,50 @@ def basicEval(board):
             9 * (chess.popcount(white & board.queens) - chess.popcount(black & board.queens))
         )
 
-def minimax(board, depth):
-    
+def minimax(board, depth, alpha=-float('inf'), beta=float('inf')):
     if board.is_game_over() or depth == 0:
         return basicEval(board), None
 
     if board.turn == chess.WHITE:
-        best = -10000
+        best = -float('inf')
         best_move = None
 
         for move in legalMoves(board):
             board.push_san(move)
-            val, _ = minimax(board, depth - 1)
+            val, _ = minimax(board, depth - 1, alpha, beta)
             board.pop()
 
             if val > best:
                 best = val
                 best_move = move
 
+            alpha = max(alpha, best)
+
+            if beta <= alpha:
+                break
+
         return best, best_move
 
     else:
-        best = 10000
+        best = float('inf')
         best_move = None
 
         for move in legalMoves(board):
             board.push_san(move)
-            val, _ = minimax(board, depth - 1)
+            val, _ = minimax(board, depth - 1, alpha, beta)
             board.pop()
 
             if val < best:
                 best = val
                 best_move = move
 
+            beta = min(beta, best)
+
+            if beta <= alpha:
+                break
+
         return best, best_move
+
 
 
 
