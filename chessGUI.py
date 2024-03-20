@@ -112,7 +112,8 @@ while run:
                 pygame.display.flip()
 
                 if board.turn == chess.BLACK and not board.is_game_over():
-                    bestValue, bestMove = chessPyt.minimax(board, 3)
+                    bestValue, bestMove = chessPyt.Evaluate.minimax(board, 3, chessPyt.PST)
+                    print("Evaluation: ", bestValue, "Best Move: ", bestMove)
                     board.push_san(bestMove)
 
                 if board.is_game_over():
@@ -123,3 +124,6 @@ while run:
     pygame.display.flip()
 
 pygame.quit()
+
+
+ 
