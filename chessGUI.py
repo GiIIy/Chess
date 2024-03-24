@@ -1,6 +1,7 @@
 import pygame
 import chess
 import chessPyt
+import promoPopUp
 
 WIDTH, HEIGHT = 480, 480
 SQUARE_SIZE = 60
@@ -96,7 +97,20 @@ while run:
                 end_square = chess.square(x_coord, y_coord)
                 move = chess.Move(start_square, end_square)
 
-                
+                if board.piece_at(start_square).piece_type == chess.PAWN and chess.square_rank(end_square) in (0, 7):
+                    promotionMoves = []
+                    for x in board.legal_moves:
+                        if str(x)[-1] in ["q", "r", "b", "n"]:
+                            promotionMoves.append(x)
+
+                    if promotionMoves != []:
+                        promoPiece = promoPopUp.create_popup_window()
+                        for x in promotionMoves:
+                            if str(x)[-1] == promoPiece:
+                                move = x
+                                break
+
+
                 san_move = event.dict.get('text') or board.san(move)
                 try:
                     move = chess.Move.from_uci(san_move)
@@ -112,7 +126,14 @@ while run:
                 pygame.display.flip()
 
                 if board.turn == chess.BLACK and not board.is_game_over():
-                    bestValue, bestMove = chessPyt.Evaluate.minimax(board, 3, chessPyt.PST)
+                    numLeft = chessPyt.numPiecesLeft(board)
+                    if numLeft < 15:
+                        depth = 4
+                    elif numLeft < 10:
+                        depth = 5
+                    else:
+                        depth = 3
+                    bestValue, bestMove = chessPyt.Evaluate.minimax(board, depth, chessPyt.PST)
                     print("Evaluation: ", bestValue, "Best Move: ", bestMove)
                     board.push_san(bestMove)
 

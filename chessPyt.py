@@ -80,46 +80,46 @@ class Evaluate():
 
         if str(piece).lower() == 'p' :
             if isWhite:
-                return PST[chess.PAWN][square]
+                return PST[chess.PAWN][square] / 10
                 
             else:
-                return -PST[chess.PAWN][chess.square_mirror(square)]
+                return -PST[chess.PAWN][chess.square_mirror(square)] / 10
             
         elif str(piece).lower() == 'n':
             
             if isWhite:
-                return PST[chess.KNIGHT][square]
+                return PST[chess.KNIGHT][square] / 10
             else:
-                return -PST[chess.KNIGHT][chess.square_mirror(square)]
+                return -PST[chess.KNIGHT][chess.square_mirror(square)] / 10
             
         elif str(piece).lower() == 'b':
             
             if isWhite:
-                return PST[chess.BISHOP][square]
+                return PST[chess.BISHOP][square] / 10
             else:
-                return -PST[chess.BISHOP][chess.square_mirror(square)]
+                return -PST[chess.BISHOP][chess.square_mirror(square)] / 10
             
         elif str(piece).lower() == 'r':
     
             if isWhite:
-                return PST[chess.ROOK][square]
+                return PST[chess.ROOK][square] / 10
             else:
-                return -PST[chess.ROOK][chess.square_mirror(square)]
+                return -PST[chess.ROOK][chess.square_mirror(square)] / 10
             
         elif str(piece).lower() == 'q':
            
             if isWhite:
-                return PST[chess.QUEEN][square]
+                return PST[chess.QUEEN][square] / 10
             else:
-                return -PST[chess.QUEEN][chess.square_mirror(square)]
+                return -PST[chess.QUEEN][chess.square_mirror(square)] / 10
             
         elif str(piece).lower() == 'k':
             
             if isWhite:
-                return PST[chess.KING][square]
+                return PST[chess.KING][square] / 10
             
             else:
-                return -PST[chess.KING][chess.square_mirror(square)]
+                return -PST[chess.KING][chess.square_mirror(square)] / 10
                 
         
         else:
@@ -169,6 +169,8 @@ class Evaluate():
     
 
 
+def numPiecesLeft(board):
+    return len(board.piece_map())
 
 pawn_table = [
 
@@ -246,6 +248,7 @@ PST = {
     chess.QUEEN: list(reversed(queens_table)),
     chess.KING: list(reversed(kings_table))
 }
+
 
 
 
