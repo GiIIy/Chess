@@ -3,17 +3,22 @@ import chess
 import chessPyt
 import promoPopUp
 
-WIDTH, HEIGHT = 480, 480
+WIDTH, HEIGHT = 600, 480  # Adjusted width to accommodate the sidebar
 SQUARE_SIZE = 60
 PIECE_SIZE = 60
 FPS = 60
 
+# Sidebar dimensions
+SIDEBAR_WIDTH = 120
+MOVE_HISTORY_HEIGHT = HEIGHT
 
 pygame.init()
 
-
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Chess')
+
+# Create a font for displaying move history
+font = pygame.font.SysFont('Arial', 20)
 
 piece_images = {
     chess.Piece.from_symbol('P'): pygame.transform.scale(pygame.image.load('assets/whitePawn.png'), (PIECE_SIZE, PIECE_SIZE)),
@@ -32,10 +37,12 @@ piece_images = {
 
 board = chess.Board()
 
-
 dragging = False
 dragged_piece = None
 start_square = None
+
+# List to store move history
+move_history = []
 
 def draw_board():
     for i in range(8):
@@ -57,7 +64,31 @@ def draw_pieces():
                     piece_image_rect = piece_image.get_rect(center=(x + 30, y + 30))
                     screen.blit(piece_image, piece_image_rect)
 
+def draw_move_history():
+    sidebar = pygame.Surface((SIDEBAR_WIDTH, MOVE_HISTORY_HEIGHT))
+    sidebar.fill((200, 200, 200))
 
+    # Render and blit move history
+    y_offset = 10
+    white_moves = []
+    black_moves = []
+    
+    for i, move in enumerate(move_history):
+        if i % 2 == 0:
+            white_moves.append(move)
+        else:
+            black_moves.append(move)
+    i = 0
+    for white_move, black_move in zip(white_moves, black_moves):
+        i += 1
+        move_text = f"{i}.{white_move} {black_move}"
+        text = font.render(move_text, True, (0, 0, 0))
+        sidebar.blit(text, (10, y_offset))
+        y_offset += font.get_linesize()
+    
+    screen.blit(sidebar, (WIDTH - SIDEBAR_WIDTH, 0))
+
+    
 run = True
 timer = pygame.time.Clock()
 
@@ -65,6 +96,7 @@ while run:
     timer.tick(FPS)
     screen.fill("lightgray")
     draw_board()
+    draw_move_history()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -87,6 +119,7 @@ while run:
                 y -= PIECE_SIZE // 2
                 screen.fill("lightgray")
                 draw_board()
+                draw_move_history()
                 screen.blit(dragged_piece, (x, y))
                 pygame.display.flip()
 
@@ -105,11 +138,11 @@ while run:
 
                     if promotionMoves != []:
                         promoPiece = promoPopUp.create_popup_window()
+                        screen = pygame.display.set_mode((WIDTH, HEIGHT))
                         for x in promotionMoves:
                             if str(x)[-1] == promoPiece:
                                 move = x
                                 break
-
 
                 san_move = event.dict.get('text') or board.san(move)
                 try:
@@ -119,10 +152,11 @@ while run:
 
                 if move in board.legal_moves:
                     board.push(move)
-                    
+                    move_history.append(san_move)  # Add move to history
 
                 screen.fill("lightgray")
                 draw_board()
+                draw_move_history()
                 pygame.display.flip()
 
                 if board.turn == chess.BLACK and not board.is_game_over():
@@ -134,8 +168,9 @@ while run:
                     else:
                         depth = 3
                     bestValue, bestMove = chessPyt.Evaluate.minimax(board, depth, chessPyt.PST)
-                    print("Evaluation: ", bestValue, "Best Move: ", bestMove)
+                    print("Evaluation : ", bestValue, "Best Move: ", bestMove)
                     board.push_san(bestMove)
+                    move_history.append(bestMove)
 
                 if board.is_game_over():
                     fen = board.board_fen()
@@ -145,6 +180,3 @@ while run:
     pygame.display.flip()
 
 pygame.quit()
-
-
- 
