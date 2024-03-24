@@ -79,6 +79,11 @@ def draw_move_history():
         else:
             black_moves.append(move)
     i = 0
+    text = font.render("Moves: ", True, (0, 0, 0))
+    sidebar.blit(text, (10, y_offset))
+    y_offset += font.get_linesize()
+
+    
     for white_move, black_move in zip(white_moves, black_moves):
         i += 1
         move_text = f"{i}.{white_move} {black_move}"
