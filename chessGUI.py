@@ -8,6 +8,9 @@ SQUARE_SIZE = 60
 PIECE_SIZE = 60
 FPS = 60
 
+
+
+
 # Sidebar dimensions
 SIDEBAR_WIDTH = 120
 MOVE_HISTORY_HEIGHT = HEIGHT
@@ -43,6 +46,7 @@ start_square = None
 
 # List to store move history
 move_history = []
+eval = 0
 
 def draw_board():
     for i in range(8):
@@ -72,7 +76,7 @@ def draw_move_history():
     y_offset = 10
     white_moves = []
     black_moves = []
-    
+
     for i, move in enumerate(move_history):
         if i % 2 == 0:
             white_moves.append(move)
@@ -83,15 +87,22 @@ def draw_move_history():
     sidebar.blit(text, (10, y_offset))
     y_offset += font.get_linesize()
 
-    
     for white_move, black_move in zip(white_moves, black_moves):
         i += 1
         move_text = f"{i}.{white_move} {black_move}"
         text = font.render(move_text, True, (0, 0, 0))
         sidebar.blit(text, (10, y_offset))
         y_offset += font.get_linesize()
+
+    # eval text at bottom of sidebar
+    text = font.render(f"Eval: {eval}", True, (0, 0, 0))
+    sidebar.blit(text, (10, HEIGHT - font.get_linesize()))  # Placing evaluation at the bottom
+
     
+
+
     screen.blit(sidebar, (WIDTH - SIDEBAR_WIDTH, 0))
+
 
     
 run = True
@@ -172,10 +183,19 @@ while run:
                         depth = 5
                     else:
                         depth = 3
+                    
                     bestValue, bestMove = chessPyt.Evaluate.minimax(board, depth, chessPyt.PST)
-                    print("Evaluation : ", bestValue, "Best Move: ", bestMove)
+                    
+                    
                     board.push_san(bestMove)
                     move_history.append(bestMove)
+
+                    # make eval global
+                    eval = bestValue
+
+
+
+
 
                 if board.is_game_over():
                     fen = board.board_fen()
