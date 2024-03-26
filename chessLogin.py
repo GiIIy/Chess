@@ -3,9 +3,11 @@ from tkinter import messagebox
 import mysql.connector
 from mysql.connector import Error
 import bcrypt
+import chessGUI
+import chessAnalysisPage
 
+# Function to create a connection to MySQL database
 def create_connection():
-    """Create a connection to MySQL database."""
     try:
         connection = mysql.connector.connect(
             host='localhost',
@@ -20,13 +22,13 @@ def create_connection():
         print(f"Error connecting to MySQL database: {e}")
         return None
 
+# Function to close the connection to MySQL database
 def close_connection(connection):
-    """Close the connection to MySQL database."""
     if connection:
         connection.close()
 
+# Function to register a new user
 def register_user():
-    """Register a new user."""
     username = username_entry.get()
     password = password_entry.get()
     try:
@@ -39,12 +41,14 @@ def register_user():
             connection.commit()
             messagebox.showinfo("Success", "User registered successfully!")
             close_connection(connection)
+            root.withdraw()  # Hide the login window
+            open_options_window()
     except Error as e:
         messagebox.showerror("Error", f"Error registering user: {e}")
         close_connection(connection)
 
+# Function to authenticate user login
 def login_user():
-    """Authenticate user login."""
     username = username_entry.get()
     password = password_entry.get()
     try:
@@ -58,6 +62,8 @@ def login_user():
                 stored_password = user_data[0].encode('utf-8')
                 if bcrypt.checkpw(password.encode('utf-8'), stored_password):
                     messagebox.showinfo("Success", "Login successful!")
+                    root.withdraw()  # Hide the login window
+                    open_options_window()
                 else:
                     messagebox.showerror("Error", "Invalid username or password.")
             else:
@@ -67,6 +73,32 @@ def login_user():
         messagebox.showerror("Error", f"Error logging in: {e}")
         close_connection(connection)
 
+# Function to open options window after successful login
+def open_options_window():
+    global options_window
+    options_window = tk.Toplevel(root)
+    options_window.title("Options")
+    options_window.geometry("300x150")  # Set window size
+
+    play_button = tk.Button(options_window, text="Play", command=play, width=20, height=2)
+    play_button.pack(pady=10)
+
+    analysis_button = tk.Button(options_window, text="Analysis", command=analysis, width=20, height=2)
+    analysis_button.pack(pady=10)
+
+# Function to start playing chess
+def play():
+    options_window.destroy()  # Close the options window
+    chess_game = chessGUI.ChessGame()
+    chess_game.run_game()
+
+# Function to start the chess analysis
+def analysis():
+    options_window.destroy()  # Close the options window
+    app = chessAnalysisPage.ChessBoardApp
+    app().run()
+
+# Main tkinter window for user authentication
 root = tk.Tk()
 root.title("User Authentication")
 

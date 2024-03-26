@@ -4,15 +4,15 @@ import chessPyt  # my other python file
 import promoPopUp  # my other python file
 
 class ChessGame:
-    def __init__(self):
+    def __init__(self, fen=chess.STARTING_FEN):
         # Constants
-        self.WIDTH, self.HEIGHT = 600, 480  # Adjusted width to accommodate the sidebar
+        self.WIDTH, self.HEIGHT = 680, 480  # Adjusted width to accommodate the sidebar
         self.SQUARE_SIZE = 60
         self.PIECE_SIZE = 60
         self.FPS = 60
 
         # Sidebar dimensions
-        self.SIDEBAR_WIDTH = 120
+        self.SIDEBAR_WIDTH = 200
         self.MOVE_HISTORY_HEIGHT = self.HEIGHT
 
         # Initialize Pygame
@@ -42,7 +42,7 @@ class ChessGame:
         }
 
         # Initialize the chess board
-        self.board = chess.Board()
+        self.board = chess.Board(fen)
 
         # Variables for dragging pieces
         self.dragging = False
@@ -52,10 +52,9 @@ class ChessGame:
         # List to store move history
         self.move_history = []
 
-        # Evaluation score
-        self.eval = 0
+        # starting evaluation score
+        self.evaluation, self.bestMove = chessPyt.Evaluate.minimax(self.board, 3, chessPyt.PST)
 
-    # Function to draw the chess board
     def draw_board(self):
         for i in range(8):
             for j in range(8):
@@ -64,7 +63,6 @@ class ChessGame:
                 pygame.draw.rect(self.screen, color, (i * self.SQUARE_SIZE, j * self.SQUARE_SIZE, self.SQUARE_SIZE, self.SQUARE_SIZE))
         self.draw_pieces()
 
-    # Function to draw chess pieces on the board
     def draw_pieces(self):
         for i in range(8):
             for j in range(8):
@@ -78,7 +76,6 @@ class ChessGame:
                         piece_image_rect = piece_image.get_rect(center=(x + 30, y + 30))
                         self.screen.blit(piece_image, piece_image_rect)
 
-    # Function to draw move history in the sidebar
     def draw_move_history(self):
         sidebar = pygame.Surface((self.SIDEBAR_WIDTH, self.MOVE_HISTORY_HEIGHT))
         sidebar.fill((200, 200, 200))
@@ -105,16 +102,22 @@ class ChessGame:
             sidebar.blit(text, (10, y_offset))
             y_offset += self.font.get_linesize()
 
-        # Evaluation score text at the bottom of sidebar
-        text = self.font.render(f"Eval: {self.eval}", True, (0, 0, 0))
+        # Render and blit evaluation score
+        text = self.font.render(f"Eval: {self.evaluation}", True, (0, 0, 0))
         sidebar.blit(text, (10, self.HEIGHT - self.font.get_linesize()))  # Placing evaluation at the bottom
+
+        text = self.font.render(f"Best Move: {self.bestMove}", True, (0, 0, 0))
+        sidebar.blit(text, (10, self.HEIGHT - self.font.get_linesize() * 2))  # Placing evaluation at the bottom
 
         self.screen.blit(sidebar, (self.WIDTH - self.SIDEBAR_WIDTH, 0))
 
-    # Main game loop
     def run_game(self):
         run = True
         timer = pygame.time.Clock()
+        if self.board.turn == chess.WHITE:
+            player_color = chess.WHITE
+        else:
+            player_color = chess.BLACK
 
         while run:
             timer.tick(self.FPS)
@@ -128,89 +131,81 @@ class ChessGame:
                     quit()
                 elif self.dragging or (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1):
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        x_coord = event.pos[0] // self.SQUARE_SIZE
-                        y_coord = 7 - event.pos[1] // self.SQUARE_SIZE
-                        self.start_square = chess.square(x_coord, y_coord)
-                        piece = self.board.piece_at(self.start_square)
+                        if self.board.turn == player_color:
+                            x_coord = event.pos[0] // self.SQUARE_SIZE
+                            y_coord = 7 - event.pos[1] // self.SQUARE_SIZE
+                            self.start_square = chess.square(x_coord, y_coord)
+                            piece = self.board.piece_at(self.start_square)
 
-                        if piece is not None:
-                            self.dragging = True
-                            self.dragged_piece = self.piece_images.get(piece)
-                            self.dragged_piece = pygame.transform.scale(self.dragged_piece, (self.PIECE_SIZE, self.PIECE_SIZE))
+                            if piece is not None and piece.color == player_color:
+                                self.dragging = True
+                                self.dragged_piece = self.piece_images.get(piece)
+                                self.dragged_piece = pygame.transform.scale(self.dragged_piece, (self.PIECE_SIZE, self.PIECE_SIZE))
 
                     elif event.type == pygame.MOUSEMOTION and self.dragging:
                         x, y = event.pos
-                        x -= self.PIECE_SIZE // 2  
+                        x -= self.PIECE_SIZE // 2
                         y -= self.PIECE_SIZE // 2
                         self.screen.fill("lightgray")
-                        self.draw_board()
+                        self.draw_board()  
                         self.draw_move_history()
                         self.screen.blit(self.dragged_piece, (x, y))
                         pygame.display.flip()
 
                     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.dragging:
-                        self.dragging = False
-                        x_coord = event.pos[0] // self.SQUARE_SIZE
-                        y_coord = 7 - event.pos[1] // self.SQUARE_SIZE
-                        end_square = chess.square(x_coord, y_coord)
-                        move = chess.Move(self.start_square, end_square)
+                        if self.board.turn == player_color:
+                            self.dragging = False
+                            x_coord = event.pos[0] // self.SQUARE_SIZE
+                            y_coord = 7 - event.pos[1] // self.SQUARE_SIZE
+                            end_square = chess.square(x_coord, y_coord)
+                            move = chess.Move(self.start_square, end_square)
 
-                        # Handling pawn promotion
-                        if self.board.piece_at(self.start_square).piece_type == chess.PAWN and chess.square_rank(end_square) in (0, 7):
-                            promotionMoves = []
-                            for x in self.board.legal_moves:
-                                if str(x)[-1] in ["q", "r", "b", "n"]:
-                                    promotionMoves.append(x)
+                            # Handling pawn promotion
+                            if self.board.piece_at(self.start_square).piece_type == chess.PAWN and chess.square_rank(end_square) in (0, 7):
+                                promotionMoves = []
+                                for x in self.board.legal_moves:
+                                    if str(x)[-1] in ["q", "r", "b", "n"]:
+                                        promotionMoves.append(x)
 
-                            if promotionMoves != []:
-                                promoPiece = promoPopUp.create_popup_window()
-                                self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-                                for x in promotionMoves:
-                                    if str(x)[-1] == promoPiece:
-                                        move = x
-                                        break
+                                if promotionMoves != []:
+                                    promoPiece = promoPopUp.create_popup_window()
+                                    self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
+                                    for x in promotionMoves:
+                                        if str(x)[-1] == promoPiece:
+                                            move = x
+                                            break
 
-                        san_move = event.dict.get('text') or self.board.san(move)
-                        try:
-                            move = chess.Move.from_uci(san_move)
-                        except:
-                            pass
+                            san_move = event.dict.get('text') or self.board.san(move)
+                            try:
+                                move = chess.Move.from_uci(san_move)
+                            except:
+                                pass
 
-                        if move in self.board.legal_moves:
-                            self.board.push(move)
-                            self.move_history.append(san_move)  # Add move to history
+                            if move in self.board.legal_moves:
+                                self.board.push(move)
+                                self.move_history.append(san_move)  # Add move to history
 
-                        self.screen.fill("lightgray")
-                        self.draw_board()
-                        self.draw_move_history()
-                        pygame.display.flip()
+                                # Update evaluation score after move
+                                bestValue, self.bestMove = chessPyt.Evaluate.minimax(self.board, 3, chessPyt.PST)
+                                self.evaluation = bestValue
 
-                        # Computer's turn
-                        if self.board.turn == chess.BLACK and not self.board.is_game_over():
-                            numLeft = chessPyt.numPiecesLeft(self.board)
-                            if numLeft < 15:
-                                depth = 4
-                            elif numLeft < 10:
-                                depth = 5
-                            else:
-                                depth = 3
-                            
-                            bestValue, bestMove = chessPyt.Evaluate.minimax(self.board, depth, chessPyt.PST)
-                            
-                            # Make the best move found by the minimax algorithm
-                            self.board.push_san(bestMove)
-                            self.move_history.append(bestMove)
+                            # Redraw only the necessary portion of the screen
+                            self.draw_board()  
+                            self.draw_move_history()
+                            pygame.display.flip()
 
-                            # Update evaluation score
-                            self.eval = bestValue
+                            # Check if the game is over
+                            if self.board.is_game_over():
+                                print("Game Over")
+                                print(self.board.result())
 
-                        # Check if the game is over
-                        if self.board.is_game_over():
-                            fen = self.board.board_fen()
-                            print(fen)
+                            # Change player turn
+                            player_color = not player_color
 
             pygame.display.flip()
 
         pygame.quit()
 
+
+    
 
